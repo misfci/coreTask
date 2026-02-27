@@ -1,4 +1,5 @@
-namespace App\Enums
+<?php
+namespace App\Enums;
 
 enum PaymentMethos: string {
     case CASH = 'cash';

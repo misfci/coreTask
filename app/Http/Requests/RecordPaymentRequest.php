@@ -14,9 +14,8 @@ class RecordPaymentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // شروط الدفع حسب الـ PDF
-            'amount' => 'required|numeric|min:0.01', // لازم مبلغ، ويكون رقم، وأكبر من صفر
-            'payment_method' => 'required|string|in:cash,bank_transfer,card', // لازم طريقة دفع من الأنواع دي بس
+            'amount' => 'required|numeric|min:0.01',
+            'payment_method' => 'required|string|in:cash,bank_transfer,card',
         ];
     }
 }

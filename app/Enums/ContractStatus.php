@@ -1,4 +1,4 @@
-
+<?php
 namespace App\Enums;
 enum ContractStatus: string {
     case DRAFT = 'draft';

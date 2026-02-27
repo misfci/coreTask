@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('contracts', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tenant_id'); 
+            $table->unsignedBigInteger('tenant_id')->index();
             $table->string('contract_number')->unique();
             $table->string('unit_name');
             $table->string('customer_name');

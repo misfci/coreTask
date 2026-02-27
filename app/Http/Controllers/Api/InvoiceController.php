@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Services\InvoiceService;
-use App\DTOs\CreateInvoiceDTO;
-use App\DTOs\RecordPaymentDTO;
+use App\DTO\CreateInvoiceDTO;
+use App\DTO\RecordPaymentDTO;
 use App\Http\Requests\StoreInvoiceRequest;
 use App\Http\Requests\RecordPaymentRequest;
 use App\Http\Resources\InvoiceResource;
@@ -20,21 +20,26 @@ class InvoiceController extends Controller
 {
     public function __construct(
         private InvoiceService $invoiceService
-    ) {}
+    ) {
+    }
 
-    // 1. عرض قائمة فواتير عقد معين (مع فلترة) - ميثود جديدة
     public function index(Request $request, Contract $contract): JsonResponse
     {
-        $this->authorize('view', $contract); // التأكد من الصلاحية
+        $this->authorize('view', $contract);
 
         $invoices = $contract->invoices()
-            ->when($request->status, fn($q) => $q->where('status', $request->status))
-            ->paginate();
+        ->when($request->status, fn($q) => $q->where('status', $request->status))
+
+        ->when($request->from_date, fn($q) => $q->whereDate('created_at', '>=', $request->from_date))
+
+        ->when($request->to_date, fn($q) => $q->whereDate('created_at', '<=', $request->to_date))
+
+        ->latest()
+        ->paginate();
 
         return InvoiceResource::collection($invoices)->response();
     }
 
-    // 2. إنشاء فاتورة لعقد (تم تعديل المسار والـ Authorize)
     public function store(StoreInvoiceRequest $request, Contract $contract): JsonResponse
     {
         $this->authorize('create', [Invoice::class, $contract]);
@@ -45,15 +50,13 @@ class InvoiceController extends Controller
         return InvoiceResource::make($invoice)->response()->setStatusCode(201);
     }
 
-    // 3. عرض تفاصيل فاتورة واحدة - ميثود جديدة
     public function show(Invoice $invoice): JsonResponse
     {
-        $this->authorize('view', $invoice);
-        
+        $this->authorize('show', $invoice);
+
         return InvoiceResource::make($invoice->load(['contract', 'payments']))->response();
     }
 
-    // 4. تسجيل دفع (تم إضافة الـ Authorize)
     public function pay(RecordPaymentRequest $request, Invoice $invoice): JsonResponse
     {
         $this->authorize('recordPayment', $invoice);
@@ -64,11 +67,11 @@ class InvoiceController extends Controller
         return PaymentResource::make($payment)->response();
     }
 
-    // 5. الملخص المالي
-    public function summary(int $contractId): JsonResponse
+    public function summary(Contract $contract): JsonResponse
     {
-        // ملاحظة: الـ Authorize هنا بتم جوه الـ Service أو باستخدام Contract Model
-        $summaryData = $this->invoiceService->getContractSummary($contractId);
+        $this->authorize('view', $contract);
+
+        $summaryData = $this->invoiceService->getContractSummary($contract->id);
         return ContractSummaryResource::make($summaryData)->response();
     }
 }

@@ -13,10 +13,6 @@ use Exception;
 
 class InvoiceService 
 {
-    /**
-     * Constructor Injection 
-     * نستخدم الـ private property promotion (PHP 8) كما طلب الـ PDF
-     */
     public function __construct(
         private ContractRepositoryInterface $contractRepo,
         private InvoiceRepositoryInterface $invoiceRepo,
@@ -24,25 +20,17 @@ class InvoiceService
         private TaxService $taxService,
     ) {}
 
-    /**
-     * 1. إنشاء فاتورة من عقد
-     */
     public function createInvoice($dto): Invoice 
     {
         return DB::transaction(function () use ($dto) {
-            // جلب العقد والتأكد من وجوده
             $contract = $this->contractRepo->findById($dto->contractId);
-
-            // شرط الـ PDF: لا يمكن إنشاء فاتورة لعقد غير نشط
-            if (!$contract || $contract->status !== ContractStatus::ACTIVE) {
+            if (!$contract || $contract->status->value !== ContractStatus::ACTIVE->value) {
                 throw new Exception("Cannot create invoice for a non-active contract.");
             }
 
-            // حساب الضريبة عبر الـ TaxService (Business Rule)
             $tax = $this->taxService->calculateTax($contract->rent_amount);
             $total = $contract->rent_amount + $tax;
 
-            // توليد رقم الفاتورة: INV-{TENANT_ID}-{YYYYMM}-{SEQUENCE}
             $invoiceNumber = sprintf(
                 "INV-%03d-%s-%04d",
                 $contract->tenant_id,
@@ -50,7 +38,6 @@ class InvoiceService
                 rand(1, 9999) 
             );
 
-            // الحفظ عبر الـ Repository
             return $this->invoiceRepo->create([
                 'contract_id'    => $contract->id,
                 'tenant_id'      => $contract->tenant_id,
@@ -64,16 +51,12 @@ class InvoiceService
         });
     }
 
-    /**
-     * 2. تسجيل عملية دفع وتحديث حالة الفاتورة
-     */
     public function recordPayment($dto): Payment 
     {
         return DB::transaction(function () use ($dto) {
             $invoice = $this->invoiceRepo->findById($dto->invoiceId);
             if (!$invoice) throw new Exception("Invoice not found.");
 
-            // شرط الـ PDF: مبلغ الدفع لا يتجاوز المتبقي
             $paidAlready = $invoice->payments()->sum('amount');
             $remaining = $invoice->total - $paidAlready;
 
@@ -81,7 +64,6 @@ class InvoiceService
                 throw new Exception("Payment exceeds the remaining balance.");
             }
 
-            // تسجيل الدفعة
             $payment = $this->paymentRepo->create([
                 'invoice_id'     => $invoice->id,
                 'amount'         => $dto->amount,
@@ -89,7 +71,6 @@ class InvoiceService
                 'paid_at'        => now(),
             ]);
 
-            // تحديث حالة الفاتورة تلقائياً (Paid / Partially Paid)
             $newTotalPaid = $paidAlready + $dto->amount;
             
             $newStatus = ($newTotalPaid >= $invoice->total) 
@@ -102,9 +83,6 @@ class InvoiceService
         });
     }
 
-    /**
-     * 3. الملخص المالي للعقد
-     */
     public function getContractSummary(int $contractId): array 
     {
         $contract = $this->contractRepo->findById($contractId);
@@ -113,7 +91,6 @@ class InvoiceService
         $invoices = $this->invoiceRepo->getByContract($contractId);
         
         $totalInvoiced = $invoices->sum('total');
-        // جلب مجموع كل الدفعات المرتبطة بفواتير هذا العقد
         $totalPaid = $invoices->flatMap->payments->sum('amount');
 
         return [

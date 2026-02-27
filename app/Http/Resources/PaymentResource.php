@@ -13,7 +13,6 @@ class PaymentResource extends JsonResource
             'id'               => $this->id,
             'amount'           => $this->amount,
             'payment_method'   => $this->payment_method,
-            // الـ reference_number طلبته الصفحة 8، ممكن نستخدم ID الدفعة أو رقم العملية
             'reference_number' => 'REF-' . str_pad($this->id, 6, '0', STR_PAD_LEFT),
             'paid_at'          => $this->paid_at,
         ];

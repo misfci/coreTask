@@ -9,7 +9,6 @@ class ContractSummaryResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        // لاحظ إن البيانات هنا بتتبعت للـ Resource كـ Array من الـ Controller
         return [
             'contract_id'         => $this['contract_id'],
             'total_invoiced'      => $this['total_invoiced'],

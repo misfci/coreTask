@@ -1,16 +1,14 @@
 <?php
 
-namespace App\DTOs;
+namespace App\DTO;
 
 class CreateInvoiceDTO
 {
     public function __construct(
         public readonly int $contractId
-    ) {}
+    ) {
+    }
 
-    /**
-     * ميثود ثابتة لتحويل الـ Request لـ DTO
-     */
     public static function fromRequest($request, $contract): self
     {
         return new self(

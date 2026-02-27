@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DTOs;
+namespace App\DTO;
 
 class RecordPaymentDTO
 {
@@ -8,7 +8,8 @@ class RecordPaymentDTO
         public readonly int $invoiceId,
         public readonly float $amount,
         public readonly string $paymentMethod
-    ) {}
+    ) {
+    }
 
     public static function fromRequest($request, $invoice): self
     {

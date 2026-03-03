@@ -28,6 +28,9 @@ class InvoiceRepository implements InvoiceRepositoryInterface
 
     public function getByContract(int $contractId)
     {
-        return Invoice::where('contract_id', $contractId)->get();
+        return Invoice::where('contract_id', $contractId)->get()
+        ->when(request('status'), fn($q, $status) => $q->where('status', $status))
+        ->latest()
+        ->paginate(10);
     }
 }

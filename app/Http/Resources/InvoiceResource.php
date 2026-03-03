@@ -22,6 +22,10 @@ class InvoiceResource extends JsonResource
             'paid_at' => $this->paid_at?->format('Y-m-d'),
             'notes' => $this->notes,
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
+            // fogotten
+            'remaining_balance' => number_format($this->total - $this->payments->sum('amount'), 2),
+            'contract'       => ContractResource::make($this->whenLoaded('contract')),
+            'payments'       => PaymentResource::collection($this->whenLoaded('payments')),
         ];
     }
 }

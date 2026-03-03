@@ -37,6 +37,8 @@ class InvoiceController extends Controller
         ->latest()
         ->paginate();
 
+        // $invoices = $this->invoiceService->getByContract($contract->id, $request->all());
+
         return InvoiceResource::collection($invoices)->response();
     }
 
